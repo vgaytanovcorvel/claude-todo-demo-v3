@@ -18,10 +18,12 @@
     <PackageReference Include="FluentAssertions" Version="8.*" />
     <PackageReference Include="coverlet.collector" Version="6.*" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Corvel.ToDo.Web.Server\Corvel.ToDo.Web.Server.csproj" />
+    <ProjectReference Include="..\..\src\Corvel.ToDo.Repository\Corvel.ToDo.Repository.csproj" />
   </ItemGroup>
 
 </Project>

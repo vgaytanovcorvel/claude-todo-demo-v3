@@ -49,3 +49,44 @@ create prompt-history.md and capture all prompts we have used to build project
 ```
 
 Created this file.
+
+## 7. Implement Modules with Dev/Review Loop
+
+```
+implement scafflded projects one by one using agents. developer agent: plan and implement the module and tests. review agentt: VERY CRICITCALLY review implementation on matching applicable rules, report issues detected with associated severity (CRITICAL-HIGH-MEDIUM-LOW). If CRICIAL HIGH-MEDIUM issues are found, revert back to develor agent for fixes and continue this loop until only low priority issues remain.
+```
+
+Implemented all 4 remaining modules (Common and Abstractions were already scaffolded with code) using a developer/reviewer agent loop:
+
+### Module 1: Implementation (2 dev rounds, 2 review rounds)
+- **Dev Round 1**: Created `ToDoItemService`, `CreateToDoItemRequestValidator`, `UpdateToDoItemRequestValidator`, DI extension, and 29 tests.
+- **Review Round 1**: NO-GO — 1 HIGH (redundant mock re-initialization), 3 MEDIUM (DI extension in wrong folder, validator test method naming, validator tests missing Mock\<SUT\> pattern).
+- **Dev Round 2**: Fixed all 4 issues.
+- **Review Round 2**: GO — only 1 MEDIUM (style) + 1 LOW remaining.
+
+### Module 2: Repository (2 dev rounds, 1 review round)
+- **Dev Round 1**: Created `ToDoItemEntity`, `ToDoDbContext`, `ToDoItemEntityConfiguration`, `RepositoryBase`, `ToDoItemRepository`, DI extension, and 11 tests.
+- **Review Round 1**: NO-GO — 3 MEDIUM (DI method naming `AddRepositoryServices` should be `AddPersistence`, `TestDbContextFactory` missing async override, missing `TestCleanup`).
+- **Dev Round 2**: Fixed all 3 issues. GO.
+
+### Module 3: Web.Core (2 dev rounds, 2 review rounds)
+- **Dev Round 1**: Created `ToDoItemsController`, `GlobalExceptionHandlerMiddleware`, DI extension, and 11 tests.
+- **Review Round 1**: NO-GO — 3 HIGH (missing `[ProducesResponseType]`, null-forgiving operator in Delete, controller mock missing `MockBehavior.Strict`), 3 MEDIUM (Delete returns 204 with body, middleware registered as Transient, mock fields not re-initialized in Setup).
+- **Dev Round 2**: Fixed all 6 issues.
+- **Review Round 2**: GO — only 3 LOW remaining.
+
+### Module 4: Web.Server (2 dev rounds, 2 review rounds)
+- **Dev Round 1**: Created `Program.cs` with full middleware pipeline, `appsettings.json`, `ToDoWebApplicationFactory`, and 8 integration tests.
+- **Review Round 1**: NO-GO — 1 HIGH (CORS before Routing in pipeline), 4 MEDIUM (missing HTTPS redirection, null-forgiving operator in tests, missing Update 400/404 and GetAll-with-data tests).
+- **Dev Round 2**: Fixed all issues, added 3 new tests (total 11).
+- **Review Round 2**: GO — only 4 LOW remaining.
+
+**Final result**: 104 tests passing across 6 test projects, 0 warnings, 0 errors.
+
+## 8. Save Agent Prompts to Memory
+
+```
+update prompts with used prompts
+```
+
+Saved developer/reviewer agent prompt templates to memory (`dev-review-prompts.md`).
