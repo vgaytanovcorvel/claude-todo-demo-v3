@@ -2,7 +2,9 @@ using Corvel.ToDo.Abstractions.Exceptions;
 using Corvel.ToDo.Abstractions.Models;
 using Corvel.ToDo.Common.Enums;
 using Corvel.ToDo.Repository.Contexts;
+using Corvel.ToDo.Repository.Entities;
 using Corvel.ToDo.Repository.Repositories;
+using Corvel.ToDo.Repository.Tests.Helpers;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,8 +33,10 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var toDoItem = new ToDoItem
         {
+            UserId = userId,
             Title = "Test Item",
             Description = "Test Description",
             Priority = Priority.High,
@@ -43,11 +47,12 @@ public class ToDoItemRepositoryTests
         var added = await repository.ToDoItemAddAsync(toDoItem, cancellationToken);
 
         // Act
-        var result = await repository.ToDoItemSingleByIdAsync(added.Id, cancellationToken);
+        var result = await repository.ToDoItemSingleByIdAsync(added.Id, userId, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
         result.Id.Should().Be(added.Id);
+        result.UserId.Should().Be(userId);
         result.Title.Should().Be("Test Item");
         result.Description.Should().Be("Test Description");
         result.Priority.Should().Be(Priority.High);
@@ -59,11 +64,12 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var nonExistentId = 999;
 
         // Act & Assert
         var exception = await Assert.ThrowsExceptionAsync<NotFoundException>(
-            () => repository.ToDoItemSingleByIdAsync(nonExistentId, cancellationToken));
+            () => repository.ToDoItemSingleByIdAsync(nonExistentId, userId, cancellationToken));
 
         exception.Message.Should().Contain("ToDoItem not found");
         exception.Message.Should().Contain("999");
@@ -74,8 +80,10 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var toDoItem = new ToDoItem
         {
+            UserId = userId,
             Title = "Existing Item",
             Priority = Priority.Medium,
             Status = ToDoItemStatus.InProgress,
@@ -85,7 +93,7 @@ public class ToDoItemRepositoryTests
         var added = await repository.ToDoItemAddAsync(toDoItem, cancellationToken);
 
         // Act
-        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(added.Id, cancellationToken);
+        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(added.Id, userId, cancellationToken);
 
         // Assert
         result.Should().NotBeNull();
@@ -100,55 +108,97 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var nonExistentId = 999;
 
         // Act
-        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(nonExistentId, cancellationToken);
+        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(nonExistentId, userId, cancellationToken);
 
         // Assert
         result.Should().BeNull();
     }
 
     [TestMethod]
-    public async Task ToDoItemGetAllAsync_ShouldReturnAllItems_WhenItemsExist()
+    public async Task ToDoItemSingleOrDefaultByIdAsync_ShouldReturnNull_WhenItemBelongsToOtherUser()
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId1 = await SeedUserAsync("user1@example.com");
+        var userId2 = await SeedUserAsync("user2@example.com");
+        var toDoItem = new ToDoItem
+        {
+            UserId = userId1,
+            Title = "User1 Item",
+            Priority = Priority.High,
+            Status = ToDoItemStatus.Pending,
+            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+        var added = await repository.ToDoItemAddAsync(toDoItem, cancellationToken);
+
+        // Act
+        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(added.Id, userId2, cancellationToken);
+
+        // Assert
+        result.Should().BeNull();
+    }
+
+    [TestMethod]
+    public async Task ToDoItemGetAllByUserIdAsync_ShouldReturnOnlyUserItems_WhenMultipleUsersExist()
+    {
+        // Arrange
+        var cancellationToken = CancellationToken.None;
+        var userId1 = await SeedUserAsync("user1@test.com");
+        var userId2 = await SeedUserAsync("user2@test.com");
+
         var item1 = new ToDoItem
         {
-            Title = "First Item",
+            UserId = userId1,
+            Title = "User1 Item 1",
             Priority = Priority.Low,
             Status = ToDoItemStatus.Pending,
             CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
         };
         var item2 = new ToDoItem
         {
-            Title = "Second Item",
+            UserId = userId1,
+            Title = "User1 Item 2",
             Priority = Priority.High,
             Status = ToDoItemStatus.InProgress,
             CreatedAtUtc = new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc)
         };
+        var item3 = new ToDoItem
+        {
+            UserId = userId2,
+            Title = "User2 Item 1",
+            Priority = Priority.Medium,
+            Status = ToDoItemStatus.Pending,
+            CreatedAtUtc = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
 
         await repository.ToDoItemAddAsync(item1, cancellationToken);
         await repository.ToDoItemAddAsync(item2, cancellationToken);
+        await repository.ToDoItemAddAsync(item3, cancellationToken);
 
         // Act
-        var result = await repository.ToDoItemGetAllAsync(cancellationToken);
+        var result = await repository.ToDoItemGetAllByUserIdAsync(userId1, cancellationToken);
 
         // Assert
         result.Should().HaveCount(2);
-        result[0].Title.Should().Be("Second Item");
-        result[1].Title.Should().Be("First Item");
+        result[0].Title.Should().Be("User1 Item 2");
+        result[1].Title.Should().Be("User1 Item 1");
+        result.Should().AllSatisfy(item => item.UserId.Should().Be(userId1));
     }
 
     [TestMethod]
-    public async Task ToDoItemGetAllAsync_ShouldReturnEmptyList_WhenNoItemsExist()
+    public async Task ToDoItemGetAllByUserIdAsync_ShouldReturnEmptyList_WhenNoItemsExist()
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
 
         // Act
-        var result = await repository.ToDoItemGetAllAsync(cancellationToken);
+        var result = await repository.ToDoItemGetAllByUserIdAsync(userId, cancellationToken);
 
         // Assert
         result.Should().BeEmpty();
@@ -159,8 +209,10 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var toDoItem = new ToDoItem
         {
+            UserId = userId,
             Title = "New Item",
             Description = "New Description",
             Priority = Priority.Critical,
@@ -175,6 +227,7 @@ public class ToDoItemRepositoryTests
         // Assert
         result.Should().NotBeNull();
         result.Id.Should().BeGreaterThan(0);
+        result.UserId.Should().Be(userId);
         result.Title.Should().Be("New Item");
         result.Description.Should().Be("New Description");
         result.Priority.Should().Be(Priority.Critical);
@@ -188,8 +241,10 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var toDoItem = new ToDoItem
         {
+            UserId = userId,
             Title = "Original Title",
             Description = "Original Description",
             Priority = Priority.Low,
@@ -202,6 +257,7 @@ public class ToDoItemRepositoryTests
         var updatedItem = new ToDoItem
         {
             Id = added.Id,
+            UserId = userId,
             Title = "Updated Title",
             Description = "Updated Description",
             Priority = Priority.Critical,
@@ -230,9 +286,11 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var nonExistentItem = new ToDoItem
         {
             Id = 999,
+            UserId = userId,
             Title = "Non-existent",
             Priority = Priority.Low,
             Status = ToDoItemStatus.Pending,
@@ -252,8 +310,10 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var toDoItem = new ToDoItem
         {
+            UserId = userId,
             Title = "Item to Delete",
             Priority = Priority.Low,
             Status = ToDoItemStatus.Pending,
@@ -263,10 +323,10 @@ public class ToDoItemRepositoryTests
         var added = await repository.ToDoItemAddAsync(toDoItem, cancellationToken);
 
         // Act
-        await repository.ToDoItemDeleteAsync(added.Id, cancellationToken);
+        await repository.ToDoItemDeleteAsync(added.Id, userId, cancellationToken);
 
         // Assert
-        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(added.Id, cancellationToken);
+        var result = await repository.ToDoItemSingleOrDefaultByIdAsync(added.Id, userId, cancellationToken);
         result.Should().BeNull();
     }
 
@@ -275,14 +335,34 @@ public class ToDoItemRepositoryTests
     {
         // Arrange
         var cancellationToken = CancellationToken.None;
+        var userId = await SeedUserAsync();
         var nonExistentId = 999;
 
         // Act & Assert
         var exception = await Assert.ThrowsExceptionAsync<NotFoundException>(
-            () => repository.ToDoItemDeleteAsync(nonExistentId, cancellationToken));
+            () => repository.ToDoItemDeleteAsync(nonExistentId, userId, cancellationToken));
 
         exception.Message.Should().Contain("ToDoItem not found");
         exception.Message.Should().Contain("999");
+    }
+
+    private async Task<int> SeedUserAsync(string email = "testuser@example.com")
+    {
+        using var context = new ToDoDbContext(dbContextOptions);
+
+        var userEntity = new UserEntity
+        {
+            Email = email,
+            FirstName = "Test",
+            LastName = "User",
+            PasswordHash = "hashed_password",
+            CreatedAtUtc = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+
+        context.Users.Add(userEntity);
+        await context.SaveChangesAsync();
+
+        return userEntity.Id;
     }
 
     [TestCleanup]
@@ -292,17 +372,4 @@ public class ToDoItemRepositoryTests
         context.Database.EnsureDeleted();
     }
 
-    private sealed class TestDbContextFactory(
-        DbContextOptions<ToDoDbContext> options) : IDbContextFactory<ToDoDbContext>
-    {
-        public ToDoDbContext CreateDbContext()
-        {
-            return new ToDoDbContext(options);
-        }
-
-        public Task<ToDoDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(CreateDbContext());
-        }
-    }
 }

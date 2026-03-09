@@ -13,4 +13,6 @@ public class ToDoItemEntity
     public DateTime? UpdatedAtUtc { get; set; }
     public DateTime? DueDate { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
+    public int UserId { get; set; }
+    public UserEntity User { get; set; } = null!;
 }

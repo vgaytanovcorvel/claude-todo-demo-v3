@@ -6,6 +6,7 @@ using Corvel.ToDo.Common.Dtos;
 using Corvel.ToDo.Common.Enums;
 using Corvel.ToDo.Web.Core.Controllers;
 using FluentAssertions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -14,17 +15,27 @@ namespace Corvel.ToDo.Web.Core.Tests.Controllers;
 [TestClass]
 public class ToDoItemsControllerTests
 {
-    private Mock<IToDoItemService> toDoItemServiceMock = null!;
+    private Mock<IToDoItemService> toDoItemServiceMock = new(MockBehavior.Strict);
     private Mock<ToDoItemsController> controllerMock = null!;
     private CancellationToken cancellationToken = CancellationToken.None;
 
     [TestInitialize]
     public void Setup()
     {
-        toDoItemServiceMock = new Mock<IToDoItemService>(MockBehavior.Strict);
         controllerMock = new Mock<ToDoItemsController>(
             () => new ToDoItemsController(toDoItemServiceMock.Object),
             MockBehavior.Strict);
+    }
+
+    [TestMethod]
+    public void Class_ShouldHaveAuthorizeAttribute()
+    {
+        // Arrange & Act
+        var authorizeAttribute = typeof(ToDoItemsController)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true);
+
+        // Assert
+        authorizeAttribute.Should().HaveCount(1);
     }
 
     [TestMethod]

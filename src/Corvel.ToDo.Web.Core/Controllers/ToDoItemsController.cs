@@ -4,6 +4,7 @@ using Corvel.ToDo.Abstractions.Models;
 using Corvel.ToDo.Abstractions.Requests;
 using Corvel.ToDo.Common.Constants;
 using Corvel.ToDo.Common.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,7 @@ namespace Corvel.ToDo.Web.Core.Controllers;
 
 [ApiController]
 [Route(RouteConstants.ApiPrefix + "/" + RouteConstants.ToDoItemsRoute)]
+[Authorize]
 public class ToDoItemsController(
     IToDoItemService toDoItemService) : ControllerBase
 {
@@ -60,6 +62,7 @@ public class ToDoItemsController(
 
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(ApiResponse<ToDoItem>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public virtual async Task<ActionResult<ApiResponse<ToDoItem>>> Update(
         int id,
@@ -73,6 +76,7 @@ public class ToDoItemsController(
 
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public virtual async Task<ActionResult> Delete(
         int id,
         CancellationToken cancellationToken)

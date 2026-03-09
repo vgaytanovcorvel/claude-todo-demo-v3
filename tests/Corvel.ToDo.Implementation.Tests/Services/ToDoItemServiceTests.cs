@@ -15,12 +15,14 @@ namespace Corvel.ToDo.Implementation.Tests.Services;
 public class ToDoItemServiceTests
 {
     private Mock<IToDoItemRepository> toDoItemRepositoryMock = new(MockBehavior.Strict);
+    private Mock<ICurrentUserAccessor> currentUserAccessorMock = new(MockBehavior.Strict);
     private Mock<IValidator<CreateToDoItemRequest>> createValidatorMock = new(MockBehavior.Strict);
     private Mock<IValidator<UpdateToDoItemRequest>> updateValidatorMock = new(MockBehavior.Strict);
     private FakeTimeProvider timeProvider = null!;
     private Mock<ToDoItemService> toDoItemServiceMock = null!;
 
     private readonly CancellationToken cancellationToken = CancellationToken.None;
+    private readonly int userId = 42;
 
     [TestInitialize]
     public void Setup()
@@ -30,6 +32,7 @@ public class ToDoItemServiceTests
         toDoItemServiceMock = new Mock<ToDoItemService>(
             () => new ToDoItemService(
                 toDoItemRepositoryMock.Object,
+                currentUserAccessorMock.Object,
                 timeProvider,
                 createValidatorMock.Object,
                 updateValidatorMock.Object),
@@ -41,15 +44,20 @@ public class ToDoItemServiceTests
     {
         // Arrange
         var itemId = 1;
-        var expectedItem = new ToDoItem { Id = itemId, Title = "Test Item" };
+        var expectedItem = new ToDoItem { Id = itemId, UserId = userId, Title = "Test Item" };
 
         toDoItemServiceMock
             .Setup(service => service.GetByIdAsync(itemId, cancellationToken))
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemSingleOrDefaultByIdAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemSingleOrDefaultByIdAsync(itemId, userId, cancellationToken))
             .ReturnsAsync(expectedItem)
             .Verifiable(Times.Once());
 
@@ -62,6 +70,7 @@ public class ToDoItemServiceTests
         result.Title.Should().Be("Test Item");
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
 
@@ -76,8 +85,13 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemSingleOrDefaultByIdAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemSingleOrDefaultByIdAsync(itemId, userId, cancellationToken))
             .ReturnsAsync((ToDoItem?)null)
             .Verifiable(Times.Once());
 
@@ -88,6 +102,7 @@ public class ToDoItemServiceTests
         result.Should().BeNull();
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
 
@@ -97,8 +112,8 @@ public class ToDoItemServiceTests
         // Arrange
         var expectedItems = new List<ToDoItem>
         {
-            new() { Id = 1, Title = "Item 1" },
-            new() { Id = 2, Title = "Item 2" }
+            new() { Id = 1, UserId = userId, Title = "Item 1" },
+            new() { Id = 2, UserId = userId, Title = "Item 2" }
         };
 
         toDoItemServiceMock
@@ -106,8 +121,13 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemGetAllAsync(cancellationToken))
+            .Setup(repo => repo.ToDoItemGetAllByUserIdAsync(userId, cancellationToken))
             .ReturnsAsync(expectedItems)
             .Verifiable(Times.Once());
 
@@ -120,6 +140,7 @@ public class ToDoItemServiceTests
         result[1].Title.Should().Be("Item 2");
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
 
@@ -134,8 +155,13 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemGetAllAsync(cancellationToken))
+            .Setup(repo => repo.ToDoItemGetAllByUserIdAsync(userId, cancellationToken))
             .ReturnsAsync(expectedItems)
             .Verifiable(Times.Once());
 
@@ -146,6 +172,7 @@ public class ToDoItemServiceTests
         result.Should().BeEmpty();
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
 
@@ -158,6 +185,7 @@ public class ToDoItemServiceTests
         var savedItem = new ToDoItem
         {
             Id = 1,
+            UserId = userId,
             Title = request.Title,
             Description = request.Description,
             Priority = request.Priority,
@@ -170,6 +198,11 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         createValidatorMock
             .Setup(v => v.ValidateAsync(
                 It.Is<ValidationContext<CreateToDoItemRequest>>(ctx => ctx.InstanceToValidate == request),
@@ -180,6 +213,7 @@ public class ToDoItemServiceTests
         toDoItemRepositoryMock
             .Setup(repo => repo.ToDoItemAddAsync(
                 It.Is<ToDoItem>(item =>
+                    item.UserId == userId &&
                     item.Title == request.Title &&
                     item.Description == request.Description &&
                     item.Priority == request.Priority &&
@@ -195,11 +229,13 @@ public class ToDoItemServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Id.Should().Be(1);
+        result.UserId.Should().Be(userId);
         result.Title.Should().Be("New Item");
         result.Status.Should().Be(ToDoItemStatus.Pending);
         result.CreatedAtUtc.Should().Be(expectedUtc);
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         createValidatorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
@@ -244,6 +280,7 @@ public class ToDoItemServiceTests
         var existingItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = "Original Title",
             Description = "Original Desc",
             Priority = Priority.Low,
@@ -253,6 +290,7 @@ public class ToDoItemServiceTests
         var updatedItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = request.Title,
             Description = request.Description,
             Priority = request.Priority,
@@ -266,6 +304,11 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.AtLeastOnce());
+
         updateValidatorMock
             .Setup(v => v.ValidateAsync(
                 It.Is<ValidationContext<UpdateToDoItemRequest>>(ctx => ctx.InstanceToValidate == request),
@@ -274,7 +317,7 @@ public class ToDoItemServiceTests
             .Verifiable(Times.Once());
 
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, userId, cancellationToken))
             .ReturnsAsync(existingItem)
             .Verifiable(Times.Once());
 
@@ -282,6 +325,7 @@ public class ToDoItemServiceTests
             .Setup(repo => repo.ToDoItemUpdateAsync(
                 It.Is<ToDoItem>(item =>
                     item.Id == itemId &&
+                    item.UserId == userId &&
                     item.Title == request.Title &&
                     item.Description == request.Description &&
                     item.Priority == request.Priority &&
@@ -302,6 +346,7 @@ public class ToDoItemServiceTests
         result.UpdatedAtUtc.Should().Be(expectedUtc);
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         updateValidatorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
@@ -316,6 +361,7 @@ public class ToDoItemServiceTests
         var existingItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = "Title",
             Priority = Priority.Low,
             Status = ToDoItemStatus.InProgress,
@@ -324,6 +370,7 @@ public class ToDoItemServiceTests
         var updatedItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = request.Title,
             Priority = request.Priority,
             Status = ToDoItemStatus.Completed,
@@ -337,6 +384,11 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.AtLeastOnce());
+
         updateValidatorMock
             .Setup(v => v.ValidateAsync(
                 It.Is<ValidationContext<UpdateToDoItemRequest>>(ctx => ctx.InstanceToValidate == request),
@@ -345,7 +397,7 @@ public class ToDoItemServiceTests
             .Verifiable(Times.Once());
 
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, userId, cancellationToken))
             .ReturnsAsync(existingItem)
             .Verifiable(Times.Once());
 
@@ -369,6 +421,7 @@ public class ToDoItemServiceTests
         result.Status.Should().Be(ToDoItemStatus.Completed);
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         updateValidatorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
@@ -384,6 +437,7 @@ public class ToDoItemServiceTests
         var existingItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = "Title",
             Priority = Priority.Low,
             Status = ToDoItemStatus.Completed,
@@ -393,6 +447,7 @@ public class ToDoItemServiceTests
         var updatedItem = new ToDoItem
         {
             Id = itemId,
+            UserId = userId,
             Title = request.Title,
             Priority = request.Priority,
             Status = ToDoItemStatus.Completed,
@@ -406,6 +461,11 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.AtLeastOnce());
+
         updateValidatorMock
             .Setup(v => v.ValidateAsync(
                 It.Is<ValidationContext<UpdateToDoItemRequest>>(ctx => ctx.InstanceToValidate == request),
@@ -414,7 +474,7 @@ public class ToDoItemServiceTests
             .Verifiable(Times.Once());
 
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemSingleByIdAsync(itemId, userId, cancellationToken))
             .ReturnsAsync(existingItem)
             .Verifiable(Times.Once());
 
@@ -435,6 +495,7 @@ public class ToDoItemServiceTests
         result.CompletedAtUtc.Should().Be(originalCompletedAt);
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         updateValidatorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
@@ -481,8 +542,13 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         toDoItemRepositoryMock
-            .Setup(repo => repo.ToDoItemDeleteAsync(itemId, cancellationToken))
+            .Setup(repo => repo.ToDoItemDeleteAsync(itemId, userId, cancellationToken))
             .Returns(Task.CompletedTask)
             .Verifiable(Times.Once());
 
@@ -491,6 +557,7 @@ public class ToDoItemServiceTests
 
         // Assert
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }
 
@@ -504,6 +571,7 @@ public class ToDoItemServiceTests
         var savedItem = new ToDoItem
         {
             Id = 1,
+            UserId = userId,
             Title = request.Title,
             Priority = request.Priority,
             Status = ToDoItemStatus.Pending,
@@ -516,6 +584,11 @@ public class ToDoItemServiceTests
             .CallBase()
             .Verifiable(Times.Once());
 
+        currentUserAccessorMock
+            .Setup(a => a.UserId)
+            .Returns(userId)
+            .Verifiable(Times.Once());
+
         createValidatorMock
             .Setup(v => v.ValidateAsync(
                 It.Is<ValidationContext<CreateToDoItemRequest>>(ctx => ctx.InstanceToValidate == request),
@@ -526,6 +599,7 @@ public class ToDoItemServiceTests
         toDoItemRepositoryMock
             .Setup(repo => repo.ToDoItemAddAsync(
                 It.Is<ToDoItem>(item =>
+                    item.UserId == userId &&
                     item.Title == request.Title &&
                     item.DueDate == futureDate),
                 cancellationToken))
@@ -540,6 +614,7 @@ public class ToDoItemServiceTests
         result.DueDate.Should().Be(futureDate);
 
         toDoItemServiceMock.VerifyAll();
+        currentUserAccessorMock.VerifyAll();
         createValidatorMock.VerifyAll();
         toDoItemRepositoryMock.VerifyAll();
     }

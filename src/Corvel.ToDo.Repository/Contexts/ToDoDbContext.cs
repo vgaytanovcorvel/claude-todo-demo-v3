@@ -7,6 +7,7 @@ public class ToDoDbContext(DbContextOptions<ToDoDbContext> options)
     : DbContext(options)
 {
     public DbSet<ToDoItemEntity> ToDoItems => Set<ToDoItemEntity>();
+    public DbSet<UserEntity> Users => Set<UserEntity>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

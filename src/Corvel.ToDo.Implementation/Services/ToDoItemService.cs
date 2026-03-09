@@ -8,18 +8,19 @@ namespace Corvel.ToDo.Implementation.Services;
 
 public class ToDoItemService(
     IToDoItemRepository toDoItemRepository,
+    ICurrentUserAccessor currentUserAccessor,
     TimeProvider timeProvider,
     IValidator<CreateToDoItemRequest> createValidator,
     IValidator<UpdateToDoItemRequest> updateValidator) : IToDoItemService
 {
     public virtual async Task<ToDoItem?> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        return await toDoItemRepository.ToDoItemSingleOrDefaultByIdAsync(id, cancellationToken);
+        return await toDoItemRepository.ToDoItemSingleOrDefaultByIdAsync(id, currentUserAccessor.UserId, cancellationToken);
     }
 
     public virtual async Task<IReadOnlyList<ToDoItem>> GetAllAsync(CancellationToken cancellationToken)
     {
-        return await toDoItemRepository.ToDoItemGetAllAsync(cancellationToken);
+        return await toDoItemRepository.ToDoItemGetAllByUserIdAsync(currentUserAccessor.UserId, cancellationToken);
     }
 
     public virtual async Task<ToDoItem> CreateAsync(CreateToDoItemRequest request, CancellationToken cancellationToken)
@@ -28,6 +29,7 @@ public class ToDoItemService(
 
         var toDoItem = new ToDoItem
         {
+            UserId = currentUserAccessor.UserId,
             Title = request.Title,
             Description = request.Description,
             Priority = request.Priority,
@@ -43,7 +45,7 @@ public class ToDoItemService(
     {
         await updateValidator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var existingItem = await toDoItemRepository.ToDoItemSingleByIdAsync(id, cancellationToken);
+        var existingItem = await toDoItemRepository.ToDoItemSingleByIdAsync(id, currentUserAccessor.UserId, cancellationToken);
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var completedAtUtc = existingItem.Status != ToDoItemStatus.Completed && request.Status == ToDoItemStatus.Completed
@@ -53,6 +55,7 @@ public class ToDoItemService(
         var updatedItem = new ToDoItem
         {
             Id = existingItem.Id,
+            UserId = currentUserAccessor.UserId,
             Title = request.Title,
             Description = request.Description,
             Priority = request.Priority,
@@ -68,6 +71,6 @@ public class ToDoItemService(
 
     public virtual async Task DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        await toDoItemRepository.ToDoItemDeleteAsync(id, cancellationToken);
+        await toDoItemRepository.ToDoItemDeleteAsync(id, currentUserAccessor.UserId, cancellationToken);
     }
 }

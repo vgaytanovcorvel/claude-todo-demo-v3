@@ -135,3 +135,98 @@ Implemented the React frontend (`corvel.todo.client`) from scaffold using the de
 **Review Round 2**: GO — all 7 MEDIUM issues resolved, only 4 LOW remaining (enum casts on controlled selects, `err.message` leaking in fetch path, missing `aria-live` for dynamic errors, non-JSON response handling in delete).
 
 **Final result**: 17 frontend files, TypeScript strict compilation passing, production build passing (206 KB JS, 5.4 KB CSS).
+
+## 10. Multi-User Support (Registration, JWT Auth, Profile Management, Todo Isolation)
+
+```
+I want to make this app multi-user so that users can register online, will be able to maintain their profiles, change passwords and view their own task while isolated from other users.
+```
+
+User chose "Create a seed user (Recommended)" for migration and "Simple JWT only (Recommended)" for token strategy.
+
+```
+implement using independent agents loop: using agents. developer agent: plan and implement the module and tests. review agent: VERY CRITICALLY review implementation on matching applicable rules, report issues detected with associated severity (CRITICAL-HIGH-MEDIUM-LOW). If CRITICAL HIGH-MEDIUM issues are found, revert back to developer agent for fixes and continue this loop until only low priority issues remain.
+```
+
+Implemented across 6 phases using the developer/reviewer agent loop:
+
+### Phase 1: Common + Abstractions (1 dev round, no review — pure contracts)
+- Added `ValidationConstants` (EmailMaxLength, PasswordMinLength/MaxLength, NameMaxLength)
+- Added `RouteConstants` (AuthRoute, UserProfileRoute, AuthRateLimitPolicy)
+- Created `User` domain model, `AuthToken` record, 4 request records (Register, Login, UpdateProfile, ChangePassword)
+- Created interfaces: `IUserRepository`, `IUserService`, `ITokenService`, `IPasswordHasher`, `ICurrentUserAccessor`
+- Created exceptions: `DuplicateEmailException`, `AuthenticationFailedException`
+- Modified `ToDoItem` (added UserId), `IToDoItemRepository` (userId params, GetAllByUserId)
+
+### Phase 2: Repository (1 dev round, 1 review round)
+- Created `UserEntity`, `UserEntityConfiguration`, `UserRepository`
+- Modified `ToDoItemEntity` (UserId FK), `ToDoItemEntityConfiguration` (FK, cascade delete)
+- Modified `ToDoItemRepository` (userId filtering on all operations, security fix: Update filters by UserId)
+- Modified `ToDoDbContext` (added DbSet<UserEntity>)
+- Extracted shared `TestDbContextFactory` from test duplicates
+- Tests: 20 ToDoItem + 8 User repository tests
+
+**Review findings fixed**: Hardcoded max-lengths → ValidationConstants, duplicate FK config removed, test naming suffixes added, duplicate TestDbContextFactory extracted.
+
+### Phase 3: Implementation (1 dev round, 1 review round)
+- Created `UserService`, `TokenService`, `PasswordHasherWrapper` (wraps Identity PasswordHasher<T>)
+- Created `JwtOptions` with SectionName constant
+- Created 4 validators: RegisterRequest, LoginRequest, UpdateProfile, ChangePassword
+- Modified `ToDoItemService` (ICurrentUserAccessor injection, user-scoped operations)
+- Tests: 72 total (UserService 11, TokenService 2, PasswordHasher 3, 4 validator files, modified ToDoItemService)
+
+**Review findings fixed**: PasswordHasher null! → SentinelUser, JwtOptions.SectionName added, mock initialization inline, TokenService missing Verifiable/VerifyAll.
+
+### Phase 4: Web.Core (1 dev round, 1 review round)
+- Created `AuthController` ([AllowAnonymous], rate limiting, register/login)
+- Created `UserProfileController` ([Authorize], GET/PUT profile, PUT password)
+- Created `UserProfileResponse` DTO (strips PasswordHash)
+- Created `HttpContextCurrentUserAccessor`
+- Modified `ToDoItemsController` (added [Authorize])
+- Modified `GlobalExceptionHandlerMiddleware` (DuplicateEmailException 409, AuthenticationFailedException 401)
+- Tests: 22 total (AuthController 2, UserProfile 3, HttpContextCurrentUserAccessor 3, modified existing)
+
+**Review findings fixed**: Fully qualified namespace → using, missing ProducesResponseType attributes added.
+
+### Phase 5: Web.Server (1 dev round, 1 review round)
+- Configured JWT Bearer authentication with TokenValidationParameters
+- Added rate limiting on auth endpoints
+- Configured middleware pipeline order
+- Tests: 11 integration tests with TestAuthHandler
+
+**Review findings fixed (3 CRITICAL, 4 HIGH, 5 MEDIUM)**:
+- CRITICAL: Removed null-forgiving operator on JWT key → proper null check with fail-fast
+- CRITICAL: Added startup validation for JWT key presence and minimum 32-byte length
+- CRITICAL: Moved JWT signing key from appsettings.Development.json to dotnet user-secrets
+- HIGH: Set ClockSkew explicitly to 30 seconds (was default 5 minutes)
+- HIGH: Rate limiter returns 429 with ApiResponse envelope (was bare 503)
+- HIGH: CORS environment-differentiated (AllowAny only in Development)
+- HIGH: Replaced magic string "auth" with RouteConstants.AuthRateLimitPolicy
+- MEDIUM: TestAuthHandler nested as private class (one-class-per-file rule)
+- MEDIUM: Pinned JwtBearer package version 9.0.13 (was floating 9.0.*)
+- MEDIUM: Test factory provides JWT key via AddInMemoryCollection
+
+### Phase 6: Frontend (1 dev round, 1 fix round, 2 review rounds)
+- Created auth types, apiClient (centralized fetch with Bearer token), authApiService
+- Created AuthContext/AuthProvider, useAuth hook
+- Created LoginForm, RegisterForm, AuthPage, ProfilePage (later split into ProfileForm + ChangePasswordForm)
+- Modified todoApiService (uses shared apiFetch), App.tsx (auth-gated UI), main.tsx (AuthProvider wrapper)
+
+**Review Round 1 findings (1 CRITICAL, 3 HIGH, 10 MEDIUM)**:
+- HIGH: Extracted duplicate apiResponseSchema + handleApiResponse into shared apiClient.ts (DRY)
+- MEDIUM: Content-Type only set for methods with body (POST/PUT/PATCH)
+- MEDIUM: 401 always throws Error (prevents caller race condition)
+- MEDIUM: AuthContext refreshProfile has error handling, login/register handle getProfile failure
+- MEDIUM: Extracted zodErrorsToMap utility (4 duplicates → 1 shared function)
+- MEDIUM: ProfilePage split into ProfileForm + ChangePasswordForm components
+
+**Review Round 2**: GO — 0 CRITICAL, 0 HIGH, 2 MEDIUM (borderline), 7 LOW. Fixed remaining 2 MEDIUMs:
+- setOnUnauthorized returns cleanup function (used in useEffect)
+- 401 always throws regardless of callback registration
+
+### Phase 7: Final Verification
+- `dotnet build Corvel.ToDo.slnx` — 0 errors, 0 warnings
+- `dotnet test Corvel.ToDo.slnx` — **167 tests passing** across 6 test projects
+- `npx tsc --noEmit` — TypeScript compiles cleanly
+
+**Final result**: Full multi-user support with JWT auth, per-user todo isolation, profile management, password changes. 167 backend tests, 0 warnings.

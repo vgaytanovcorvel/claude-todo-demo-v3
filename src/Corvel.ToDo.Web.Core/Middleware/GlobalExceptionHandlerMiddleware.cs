@@ -29,6 +29,20 @@ public class GlobalExceptionHandlerMiddleware(
                 HttpStatusCode.NotFound,
                 ex.Message);
         }
+        catch (DuplicateEmailException ex)
+        {
+            await WriteResponseAsync(
+                context,
+                HttpStatusCode.Conflict,
+                ex.Message);
+        }
+        catch (AuthenticationFailedException ex)
+        {
+            await WriteResponseAsync(
+                context,
+                HttpStatusCode.Unauthorized,
+                ex.Message);
+        }
         catch (ValidationException ex)
         {
             var errorMessage = string.Join(" ", ex.Errors.Select(e => e.ErrorMessage));

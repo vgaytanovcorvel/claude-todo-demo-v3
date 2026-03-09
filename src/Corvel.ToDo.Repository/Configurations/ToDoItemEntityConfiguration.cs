@@ -30,5 +30,15 @@ public class ToDoItemEntityConfiguration : IEntityTypeConfiguration<ToDoItemEnti
             .IsRequired();
 
         builder.HasIndex(e => e.Status);
+
+        builder.Property(e => e.UserId)
+            .IsRequired();
+
+        builder.HasIndex(e => e.UserId);
+
+        builder.HasOne(e => e.User)
+            .WithMany(u => u.ToDoItems)
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

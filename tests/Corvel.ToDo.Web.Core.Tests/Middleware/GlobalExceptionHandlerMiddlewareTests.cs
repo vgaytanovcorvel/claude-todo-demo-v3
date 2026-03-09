@@ -15,7 +15,7 @@ namespace Corvel.ToDo.Web.Core.Tests.Middleware;
 [TestClass]
 public class GlobalExceptionHandlerMiddlewareTests
 {
-    private Mock<ILogger<GlobalExceptionHandlerMiddleware>> loggerMock = null!;
+    private Mock<ILogger<GlobalExceptionHandlerMiddleware>> loggerMock = new(MockBehavior.Strict);
     private Mock<GlobalExceptionHandlerMiddleware> middlewareMock = null!;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -26,7 +26,6 @@ public class GlobalExceptionHandlerMiddlewareTests
     [TestInitialize]
     public void Setup()
     {
-        loggerMock = new Mock<ILogger<GlobalExceptionHandlerMiddleware>>(MockBehavior.Strict);
         middlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
             () => new GlobalExceptionHandlerMiddleware(loggerMock.Object),
             MockBehavior.Strict);
@@ -146,6 +145,74 @@ public class GlobalExceptionHandlerMiddlewareTests
         apiResponse!.Success.Should().BeFalse();
         apiResponse.Error.Should().Be("An unexpected error occurred.");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+
+        middlewareMock.VerifyAll();
+        loggerMock.VerifyAll();
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_ShouldReturn409_WhenDuplicateEmailExceptionIsThrown()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        RequestDelegate next = _ => throw new DuplicateEmailException("Email already exists.");
+
+        middlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, next))
+            .CallBase()
+            .Verifiable(Times.Once());
+
+        // Act
+        await middlewareMock.Object.InvokeAsync(context, next);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(409);
+        context.Response.ContentType.Should().Be("application/json");
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var responseBody = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        var apiResponse = JsonSerializer.Deserialize<ApiResponse<object>>(responseBody, JsonOptions);
+
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse.Error.Should().Be("Email already exists.");
+        apiResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+
+        middlewareMock.VerifyAll();
+        loggerMock.VerifyAll();
+    }
+
+    [TestMethod]
+    public async Task InvokeAsync_ShouldReturn401_WhenAuthenticationFailedExceptionIsThrown()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        context.Response.Body = new MemoryStream();
+
+        RequestDelegate next = _ => throw new AuthenticationFailedException("Invalid credentials.");
+
+        middlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, next))
+            .CallBase()
+            .Verifiable(Times.Once());
+
+        // Act
+        await middlewareMock.Object.InvokeAsync(context, next);
+
+        // Assert
+        context.Response.StatusCode.Should().Be(401);
+        context.Response.ContentType.Should().Be("application/json");
+
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        var responseBody = await new StreamReader(context.Response.Body).ReadToEndAsync();
+        var apiResponse = JsonSerializer.Deserialize<ApiResponse<object>>(responseBody, JsonOptions);
+
+        apiResponse.Should().NotBeNull();
+        apiResponse!.Success.Should().BeFalse();
+        apiResponse.Error.Should().Be("Invalid credentials.");
+        apiResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
         middlewareMock.VerifyAll();
         loggerMock.VerifyAll();

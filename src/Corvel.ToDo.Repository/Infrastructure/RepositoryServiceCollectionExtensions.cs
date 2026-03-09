@@ -17,6 +17,7 @@ public static class RepositoryServiceCollectionExtensions
                 configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<IToDoItemRepository, ToDoItemRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
 
         return services;
     }
