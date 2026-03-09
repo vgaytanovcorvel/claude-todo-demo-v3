@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(echo EXIT: $?:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(dotnet new:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(ls:*)",
+      "Bash(dotnet build:*)"
     ]
   }
 }

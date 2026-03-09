@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Corvel.ToDo.Abstractions/Corvel.ToDo.Abstractions.csproj" />
+    <Project Path="src/Corvel.ToDo.Common/Corvel.ToDo.Common.csproj" />
+    <Project Path="src/Corvel.ToDo.Implementation/Corvel.ToDo.Implementation.csproj" />
+    <Project Path="src/Corvel.ToDo.Repository/Corvel.ToDo.Repository.csproj" />
+    <Project Path="src/Corvel.ToDo.Web.Core/Corvel.ToDo.Web.Core.csproj" />
+    <Project Path="src/Corvel.ToDo.Web.Server/Corvel.ToDo.Web.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Corvel.ToDo.Abstractions.Tests/Corvel.ToDo.Abstractions.Tests.csproj" />
+    <Project Path="tests/Corvel.ToDo.Common.Tests/Corvel.ToDo.Common.Tests.csproj" />
+    <Project Path="tests/Corvel.ToDo.Implementation.Tests/Corvel.ToDo.Implementation.Tests.csproj" />
+    <Project Path="tests/Corvel.ToDo.Repository.Tests/Corvel.ToDo.Repository.Tests.csproj" />
+    <Project Path="tests/Corvel.ToDo.Web.Core.Tests/Corvel.ToDo.Web.Core.Tests.csproj" />
+    <Project Path="tests/Corvel.ToDo.Web.Server.Tests/Corvel.ToDo.Web.Server.Tests.csproj" />
+  </Folder>
+</Solution>

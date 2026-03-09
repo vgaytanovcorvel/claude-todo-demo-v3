@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Corvel.ToDo.Web.Core</RootNamespace>
+    <AssemblyName>Corvel.ToDo.Web.Core</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Corvel.ToDo.Abstractions\Corvel.ToDo.Abstractions.csproj" />
+    <ProjectReference Include="..\Corvel.ToDo.Implementation\Corvel.ToDo.Implementation.csproj" />
+    <ProjectReference Include="..\Corvel.ToDo.Common\Corvel.ToDo.Common.csproj" />
+  </ItemGroup>
+
+</Project>

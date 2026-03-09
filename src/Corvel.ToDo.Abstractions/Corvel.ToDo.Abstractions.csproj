@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Corvel.ToDo.Abstractions</RootNamespace>
+    <AssemblyName>Corvel.ToDo.Abstractions</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Corvel.ToDo.Common\Corvel.ToDo.Common.csproj" />
+  </ItemGroup>
+
+</Project>

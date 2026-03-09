@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Corvel.ToDo.Web.Server</RootNamespace>
+    <AssemblyName>Corvel.ToDo.Web.Server</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Corvel.ToDo.Web.Core\Corvel.ToDo.Web.Core.csproj" />
+    <ProjectReference Include="..\Corvel.ToDo.Implementation\Corvel.ToDo.Implementation.csproj" />
+    <ProjectReference Include="..\Corvel.ToDo.Repository\Corvel.ToDo.Repository.csproj" />
+  </ItemGroup>
+
+</Project>
