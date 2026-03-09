@@ -1,0 +1,98 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background: #f0f2f5;
+  color: #333;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.app-header {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  color: #fff;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.app-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.app-subtitle {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.app-main {
+  padding: 24px;
+}
+
+/* Shared button styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid #4a90d9;
+  outline-offset: 2px;
+}
+
+.btn-primary {
+  background: #4a90d9;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #3a7bc8;
+}
+
+.btn-secondary {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #dee2e6;
+}
+
+.btn-danger {
+  background: #c62828;
+  color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b71c1c;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}

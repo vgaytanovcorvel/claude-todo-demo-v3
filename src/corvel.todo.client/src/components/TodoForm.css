@@ -1,0 +1,113 @@
+.form-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.form-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.form-title {
+  margin: 0 0 20px;
+  font-size: 1.25rem;
+  color: #1a1a2e;
+}
+
+.form-error-banner {
+  background: #ffeaea;
+  color: #c62828;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 0.875rem;
+}
+
+.form-field {
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.required {
+  color: #c62828;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #333;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 2px rgba(74, 144, 217, 0.2);
+}
+
+.input-error {
+  border-color: #c62828;
+}
+
+.input-error:focus {
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.2);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.field-error {
+  display: block;
+  color: #c62828;
+  font-size: 0.75rem;
+  margin-top: 4px;
+}
+
+.char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 2px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-field {
+  flex: 1;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}

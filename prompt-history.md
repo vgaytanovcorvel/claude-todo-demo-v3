@@ -90,3 +90,48 @@ update prompts with used prompts
 ```
 
 Saved developer/reviewer agent prompt templates to memory (`dev-review-prompts.md`).
+
+## 9. Implement Frontend with Dev/Review Loop
+
+```
+did we implement front end? implement scafflded projects one by one using agents. developer agent: plan and implement the module and tests. review agentt: VERY CRICITCALLY review implementation on matching applicable rules, report issues detected with associated severity (CRITICAL-HIGH-MEDIUM-LOW). If CRICIAL HIGH-MEDIUM issues are found, revert back to develor agent for fixes and continue this loop until only low priority issues remain.
+```
+
+Implemented the React frontend (`corvel.todo.client`) from scaffold using the dev/review agent loop. Backend was already 100% complete (104 tests passing).
+
+### corvel.todo.client (1 dev round, 1 fix round, 2 review rounds)
+
+**Dev Round 1**: Created 17 files:
+- `types/todo.ts` — TypeScript interfaces, const enums (`Priority`, `ToDoItemStatus`), helper label functions
+- `constants/validation.ts` — `TITLE_MAX_LENGTH=200`, `DESCRIPTION_MAX_LENGTH=2000`
+- `services/todoApiService.ts` — HTTP client using native `fetch` with `ApiResponse<T>` envelope unwrapping
+- `hooks/useTodos.ts` — Custom hook for CRUD state management with immutable updates
+- `components/TodoList.tsx` — Main list with table layout, loading/error/empty states
+- `components/TodoItem.tsx` — Single row with color-coded priority/status badges, overdue indicator
+- `components/TodoForm.tsx` — Modal form for create/edit with client-side validation
+- `components/TodoFilters.tsx` — Client-side filtering by status and priority
+- `components/ConfirmDialog.tsx` — Delete confirmation modal with keyboard (Escape) support
+- `App.tsx` (rewritten), `App.css`, plus CSS for each component
+- TypeScript compilation (`tsc --noEmit`) and production build (`npm run build`) both pass.
+
+**Review Round 1**: NO-GO — 6 MEDIUM issues:
+1. DRY violation — duplicate `ALL_PRIORITIES`/`ALL_STATUSES` in TodoForm and TodoFilters
+2. Missing Zod validation on API responses at system boundary
+3. Unsafe type assertions (`undefined as T`, `body.data as T`)
+4. Unhandled promise rejection in `handleDeleteConfirm`
+5. Hardcoded "Delete" text in generic `ConfirmDialog`
+6. Raw error messages from API shown directly to users
+7. Unsafe `as` type casts in `handleFormSubmit`
+
+**Fix Round**: Fixed all 7 MEDIUM issues:
+- Extracted shared constants to `types/todo.ts`
+- Installed `zod`, added `apiResponseSchema` validation on all API responses
+- Removed unsafe casts; `deleteTodo` handles 204 directly, added null guard on `body.data`
+- Added try/catch with user-friendly error in `handleDeleteConfirm`
+- Added `confirmLabel` prop to `ConfirmDialog`
+- Changed error messages to friendly "Failed to save/delete todo. Please try again."
+- Used `'status' in request` for proper type narrowing instead of forced casts
+
+**Review Round 2**: GO — all 7 MEDIUM issues resolved, only 4 LOW remaining (enum casts on controlled selects, `err.message` leaking in fetch path, missing `aria-live` for dynamic errors, non-JSON response handling in delete).
+
+**Final result**: 17 frontend files, TypeScript strict compilation passing, production build passing (206 KB JS, 5.4 KB CSS).
