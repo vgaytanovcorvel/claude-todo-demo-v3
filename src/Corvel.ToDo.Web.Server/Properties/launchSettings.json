@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Corvel.ToDo.Web.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:64941;http://localhost:64942"
+    }
+  }
+}

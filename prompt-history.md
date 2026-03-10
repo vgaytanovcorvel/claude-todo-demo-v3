@@ -301,3 +301,33 @@ Found **12 remaining violations** across all modules. Fixed 4 actionable items:
 | Implementation | LOW | Unused `ApplyEnumRules` in SharedValidationRules |
 
 **Final result**: 53 violations → 8 remaining (all MEDIUM/LOW except 1 deployment config item). 167 tests passing, 0 build errors.
+
+## 12. Troubleshoot Frontend Sign-Up Errors
+
+```
+troubleshoot front end errors running on: http://localhost:5173/
+```
+
+Used Playwright MCP to launch browser, navigate to the app, and reproduce the sign-up failure. Diagnosed and fixed **5 issues**:
+
+### Issues Found and Fixed
+
+1. **Vite proxy target mismatch** (`vite.config.ts`) — Proxy pointed to `https://localhost:5001` but backend runs on `https://localhost:64941` per `launchSettings.json`. Fixed target URL.
+
+2. **Empty database connection string** (`appsettings.Development.json`) — `ConnectionStrings.DefaultConnection` was blank. Added LocalDB connection string: `Server=(localdb)\MSSQLLocalDB;Database=CorvelToDo;Trusted_Connection=True;TrustServerCertificate=True`.
+
+3. **Missing JWT signing key** (`appsettings.Development.json`) — `Jwt:Key` was not configured, causing `TokenService.GenerateToken()` to fail. Added dev signing key.
+
+4. **Frontend crash on non-JSON error responses** (`apiClient.ts:handleApiResponse`) — `response.json()` was called unconditionally. When backend returned 500 with empty body, it threw `"Failed to execute 'json' on 'Response': Unexpected end of JSON input"`. Fixed to read as text first, then parse with error handling.
+
+5. **Zod schema rejected null error field** (`apiClient.ts:apiResponseSchema`) — Backend returns `"error": null` on success, but schema had `z.string().optional()` which accepts `undefined` but not `null`. Changed to `z.string().nullable().optional()`.
+
+### Infrastructure Changes
+
+- Added `Microsoft.EntityFrameworkCore.Design` package (to `Directory.Packages.props` and `Web.Server.csproj`)
+- Created initial EF Core migration (`InitialCreate`) — no migrations existed previously
+- Applied migration to create `CorvelToDo` database on LocalDB (Users + ToDoItems tables)
+
+### Verification
+
+Retested full sign-up flow in browser via Playwright: form submission → account creation → JWT token received → profile loaded → redirected to todo dashboard. All working.

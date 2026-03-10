@@ -73,7 +73,7 @@ export async function apiFetch(url: string, options: RequestInit = {}): Promise<
 export const apiResponseSchema = z.object({
   success: z.boolean(),
   data: z.unknown().optional(),
-  error: z.string().optional(),
+  error: z.string().nullable().optional(),
   statusCode: z.number(),
 })
 
@@ -83,7 +83,18 @@ export const apiResponseSchema = z.object({
  * (standard practice for typed API clients with a shared backend).
  */
 export async function handleApiResponse<T>(response: Response): Promise<T> {
-  const json: unknown = await response.json()
+  const text = await response.text()
+  if (!text) {
+    throw new Error(`Server returned ${response.status} with no response body`)
+  }
+
+  let json: unknown
+  try {
+    json = JSON.parse(text)
+  } catch {
+    throw new Error(`Server returned ${response.status}: ${text.substring(0, 200)}`)
+  }
+
   const body = apiResponseSchema.parse(json)
 
   if (!body.success) {
