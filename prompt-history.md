@@ -230,3 +230,74 @@ Implemented across 6 phases using the developer/reviewer agent loop:
 - `npx tsc --noEmit` — TypeScript compiles cleanly
 
 **Final result**: Full multi-user support with JWT auth, per-user todo isolation, profile management, password changes. 167 backend tests, 0 warnings.
+
+## 11. Cross-Module Rules Compliance Review and Fixes
+
+```
+start parallel review agents to VERY CRITICALLY review Implementation, Web.Core, Web.Server modules for compliance with RULES. then fix all issues using developer agents, re-run reviewer agents to verify fixes. run one implementing agent at a time with very critical reviewer agent to follow in a loop on main.
+```
+
+Launched parallel reviewer agents for Implementation, Web.Core, and Web.Server. Initial reviews found **53 total violations** (5 Critical, 24 Major, 24 Minor). Fixed iteratively using dev/review agent loop.
+
+### Round 1: Initial Reviews (3 parallel reviewer agents)
+
+**Implementation** — 18 violations (1 CRITICAL, 7 MAJOR, 10 MINOR):
+- Domain models (`User`, `ToDoItem`) used mutable classes instead of records
+- Missing `IValidateOptions<JwtOptions>` startup validation
+- Email enumeration vulnerability in UserService
+- No shared validation rules (DRY violations across 6 validators)
+- Missing `MaximumLength` on LoginRequest/ChangePassword validators
+- `new[]` instead of C# 12 collection expressions in TokenService
+- Empty primary constructor parentheses on PasswordHasherWrapper
+
+**Web.Core** — 19 violations (2 CRITICAL, 9 MAJOR, 8 MINOR):
+- `IMiddleware` pattern instead of convention-based middleware
+- Exception messages leaking internal details (DuplicateEmailException, AuthenticationFailedException)
+- Domain models exposed directly in controller responses (no DTOs)
+- Missing FluentValidation auto-validation wiring
+- DI method named `AddWebCoreServices` instead of `AddWebCore`
+- Middleware registered as scoped service (should use `UseMiddleware<T>`)
+- Two classes in one file (middleware + extensions)
+- `InvalidOperationException` instead of `AuthenticationFailedException` in HttpContextCurrentUserAccessor
+
+**Web.Server** — 16 violations (2 CRITICAL, 8 MAJOR, 6 MINOR):
+- JWT auth and rate limiting config inline in Program.cs instead of extension methods
+- No Central Package Management (Directory.Packages.props)
+- Missing HSTS, Swagger, health checks, `AllowedHosts`
+- Forbidden direct references to Common/Implementation namespaces
+- Middleware pipeline order issues
+
+### Round 2: Fixes (sequential dev agents on main branch)
+
+**Cross-Cutting Agent**: Created `Directory.Packages.props` with 21 centralized package versions. Converted `User` and `ToDoItem` from classes to records with `{ get; init; }`. Updated all test assignments for record compatibility.
+
+**Implementation Agent**: Created `JwtOptionsValidator` (IValidateOptions), `SharedValidationRules` (DRY extension methods). Fixed email enumeration message, collection expressions, empty constructor parens. Refactored all 6 validators to use shared rules. Added `MaximumLength` constraints.
+
+**Web.Core Agent**: Converted middleware to convention-based pattern. Sanitized exception messages. Created `ToDoItemResponse` and `AuthTokenResponse` DTOs. Added `MapToResponse` methods in controllers. Added `AddFluentValidationAutoValidation()`. Renamed DI method to `AddWebCore()`. Fixed HttpContextCurrentUserAccessor exception type.
+
+**Web.Server Agent**: Extracted `AddJwtAuthentication()` and `AddApiRateLimiting()` extension methods. Slimmed Program.cs from ~116 to ~71 lines. Added HSTS, Swagger, health checks, `AllowedHosts`. Removed forbidden namespace usings.
+
+### Round 3: Re-Reviews (3 parallel reviewer agents)
+
+Found **12 remaining violations** across all modules. Fixed 4 actionable items:
+1. Middleware pipeline order — moved `UseGlobalExceptionHandler()` to first position
+2. Added `UseStaticFiles()` for React SPA serving
+3. Consolidated duplicate environment checks into if/else
+4. Split two-classes-in-one-file (middleware extensions to separate file)
+
+### Round 4: Final Re-Reviews (3 parallel reviewer agents)
+
+**8 remaining findings** (1 CRITICAL, 5 MEDIUM, 2 LOW) — accepted as sufficient:
+
+| Module | Severity | Finding |
+|--------|----------|---------|
+| Web.Server | CRITICAL | Empty `AllowedOrigins` in appsettings.json (deployment config, not code) |
+| Web.Server | MEDIUM | `AddHealthChecks()` has no actual checks configured |
+| Web.Core | MEDIUM | Hardcoded rate limit values (window=1min, limit=10) |
+| Web.Core | MEDIUM | Hardcoded JWT key min length `32` |
+| Web.Core | MEDIUM | Redundant `LogError` in exception handler (telemetry captures) |
+| Implementation | MEDIUM | `PasswordHasherWrapper` uses traditional field instead of primary constructor |
+| Implementation | LOW | Unused `ApplyDueDateRules` / duplicated inline due date validation |
+| Implementation | LOW | Unused `ApplyEnumRules` in SharedValidationRules |
+
+**Final result**: 53 violations → 8 remaining (all MEDIUM/LOW except 1 deployment config item). 167 tests passing, 0 build errors.

@@ -24,7 +24,7 @@ public class UserService(
         var existingUser = await userRepository.UserSingleOrDefaultByEmailAsync(request.Email, cancellationToken);
         if (existingUser is not null)
         {
-            throw new DuplicateEmailException($"Email '{request.Email}' is already registered.");
+            throw new DuplicateEmailException("An account with this email already exists.");
         }
 
         var hashedPassword = passwordHasher.HashPassword(request.Password);
@@ -80,7 +80,7 @@ public class UserService(
             var emailTaken = await userRepository.UserSingleOrDefaultByEmailAsync(request.Email, cancellationToken);
             if (emailTaken is not null)
             {
-                throw new DuplicateEmailException($"Email '{request.Email}' is already registered.");
+                throw new DuplicateEmailException("An account with this email already exists.");
             }
         }
 

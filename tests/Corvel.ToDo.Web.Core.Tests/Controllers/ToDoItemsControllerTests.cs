@@ -5,6 +5,7 @@ using Corvel.ToDo.Abstractions.Requests;
 using Corvel.ToDo.Common.Dtos;
 using Corvel.ToDo.Common.Enums;
 using Corvel.ToDo.Web.Core.Controllers;
+using Corvel.ToDo.Web.Core.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -76,7 +77,7 @@ public class ToDoItemsControllerTests
         okResult.Should().NotBeNull();
         okResult!.StatusCode.Should().Be(200);
 
-        var apiResponse = okResult.Value as ApiResponse<IReadOnlyList<ToDoItem>>;
+        var apiResponse = okResult.Value as ApiResponse<IReadOnlyList<ToDoItemResponse>>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data.Should().HaveCount(1);
@@ -114,7 +115,7 @@ public class ToDoItemsControllerTests
         okResult.Should().NotBeNull();
         okResult!.StatusCode.Should().Be(200);
 
-        var apiResponse = okResult.Value as ApiResponse<IReadOnlyList<ToDoItem>>;
+        var apiResponse = okResult.Value as ApiResponse<IReadOnlyList<ToDoItemResponse>>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data.Should().BeEmpty();
@@ -160,7 +161,7 @@ public class ToDoItemsControllerTests
         okResult.Should().NotBeNull();
         okResult!.StatusCode.Should().Be(200);
 
-        var apiResponse = okResult.Value as ApiResponse<ToDoItem>;
+        var apiResponse = okResult.Value as ApiResponse<ToDoItemResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data!.Id.Should().Be(itemId);
@@ -198,7 +199,7 @@ public class ToDoItemsControllerTests
         notFoundResult.Should().NotBeNull();
         notFoundResult!.StatusCode.Should().Be(404);
 
-        var apiResponse = notFoundResult.Value as ApiResponse<ToDoItem>;
+        var apiResponse = notFoundResult.Value as ApiResponse<ToDoItemResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeFalse();
         apiResponse.Error.Should().Contain("999");
@@ -257,7 +258,7 @@ public class ToDoItemsControllerTests
         createdResult.Should().NotBeNull();
         createdResult!.StatusCode.Should().Be(201);
 
-        var apiResponse = createdResult.Value as ApiResponse<ToDoItem>;
+        var apiResponse = createdResult.Value as ApiResponse<ToDoItemResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data!.Id.Should().Be(1);
@@ -313,7 +314,7 @@ public class ToDoItemsControllerTests
         okResult.Should().NotBeNull();
         okResult!.StatusCode.Should().Be(200);
 
-        var apiResponse = okResult.Value as ApiResponse<ToDoItem>;
+        var apiResponse = okResult.Value as ApiResponse<ToDoItemResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data!.Title.Should().Be("Updated Item");

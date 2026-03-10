@@ -53,7 +53,7 @@ public class UserProfileController(
         return NoContent();
     }
 
-    private static UserProfileResponse MapToResponse(User user) =>
+    private UserProfileResponse MapToResponse(User user) =>
         new(
             user.Id,
             user.Email,

@@ -26,8 +26,10 @@ public class GlobalExceptionHandlerMiddlewareTests
     [TestInitialize]
     public void Setup()
     {
+        RequestDelegate noOpNext = _ => Task.CompletedTask;
+
         middlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
-            () => new GlobalExceptionHandlerMiddleware(loggerMock.Object),
+            () => new GlobalExceptionHandlerMiddleware(noOpNext),
             MockBehavior.Strict);
     }
 
@@ -38,15 +40,18 @@ public class GlobalExceptionHandlerMiddlewareTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
-        RequestDelegate next = _ => throw new NotFoundException("ToDo item not found (Id: 1).");
+        RequestDelegate throwingNext = _ => throw new NotFoundException("ToDo item not found (Id: 1).");
+        var throwingMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(throwingNext),
+            MockBehavior.Strict);
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        throwingMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await throwingMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(404);
@@ -61,7 +66,7 @@ public class GlobalExceptionHandlerMiddlewareTests
         apiResponse.Error.Should().Be("ToDo item not found (Id: 1).");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.NotFound);
 
-        middlewareMock.VerifyAll();
+        throwingMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 
@@ -78,15 +83,18 @@ public class GlobalExceptionHandlerMiddlewareTests
             new("Priority", "Priority is invalid.")
         };
 
-        RequestDelegate next = _ => throw new ValidationException(validationFailures);
+        RequestDelegate throwingNext = _ => throw new ValidationException(validationFailures);
+        var throwingMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(throwingNext),
+            MockBehavior.Strict);
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        throwingMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await throwingMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(400);
@@ -102,7 +110,7 @@ public class GlobalExceptionHandlerMiddlewareTests
         apiResponse.Error.Should().Contain("Priority is invalid.");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        middlewareMock.VerifyAll();
+        throwingMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 
@@ -114,7 +122,10 @@ public class GlobalExceptionHandlerMiddlewareTests
         context.Response.Body = new MemoryStream();
 
         var exception = new InvalidOperationException("Something went wrong.");
-        RequestDelegate next = _ => throw exception;
+        RequestDelegate throwingNext = _ => throw exception;
+        var throwingMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(throwingNext),
+            MockBehavior.Strict);
 
         loggerMock
             .Setup(x => x.Log(
@@ -125,13 +136,13 @@ public class GlobalExceptionHandlerMiddlewareTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()))
             .Verifiable(Times.Once());
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        throwingMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await throwingMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(500);
@@ -146,7 +157,7 @@ public class GlobalExceptionHandlerMiddlewareTests
         apiResponse.Error.Should().Be("An unexpected error occurred.");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
 
-        middlewareMock.VerifyAll();
+        throwingMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 
@@ -157,15 +168,18 @@ public class GlobalExceptionHandlerMiddlewareTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
-        RequestDelegate next = _ => throw new DuplicateEmailException("Email already exists.");
+        RequestDelegate throwingNext = _ => throw new DuplicateEmailException("Email already exists.");
+        var throwingMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(throwingNext),
+            MockBehavior.Strict);
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        throwingMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await throwingMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(409);
@@ -177,10 +191,10 @@ public class GlobalExceptionHandlerMiddlewareTests
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeFalse();
-        apiResponse.Error.Should().Be("Email already exists.");
+        apiResponse.Error.Should().Be("A conflict occurred with the provided data.");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
 
-        middlewareMock.VerifyAll();
+        throwingMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 
@@ -191,15 +205,18 @@ public class GlobalExceptionHandlerMiddlewareTests
         var context = new DefaultHttpContext();
         context.Response.Body = new MemoryStream();
 
-        RequestDelegate next = _ => throw new AuthenticationFailedException("Invalid credentials.");
+        RequestDelegate throwingNext = _ => throw new AuthenticationFailedException("Invalid credentials.");
+        var throwingMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(throwingNext),
+            MockBehavior.Strict);
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        throwingMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await throwingMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         context.Response.StatusCode.Should().Be(401);
@@ -211,10 +228,10 @@ public class GlobalExceptionHandlerMiddlewareTests
 
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeFalse();
-        apiResponse.Error.Should().Be("Invalid credentials.");
+        apiResponse.Error.Should().Be("Authentication failed.");
         apiResponse.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
 
-        middlewareMock.VerifyAll();
+        throwingMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 
@@ -231,18 +248,22 @@ public class GlobalExceptionHandlerMiddlewareTests
             return Task.CompletedTask;
         };
 
-        middlewareMock
-            .Setup(middleware => middleware.InvokeAsync(context, next))
+        var noThrowMiddlewareMock = new Mock<GlobalExceptionHandlerMiddleware>(
+            () => new GlobalExceptionHandlerMiddleware(next),
+            MockBehavior.Strict);
+
+        noThrowMiddlewareMock
+            .Setup(middleware => middleware.InvokeAsync(context, loggerMock.Object))
             .CallBase()
             .Verifiable(Times.Once());
 
         // Act
-        await middlewareMock.Object.InvokeAsync(context, next);
+        await noThrowMiddlewareMock.Object.InvokeAsync(context, loggerMock.Object);
 
         // Assert
         nextCalled.Should().BeTrue();
 
-        middlewareMock.VerifyAll();
+        noThrowMiddlewareMock.VerifyAll();
         loggerMock.VerifyAll();
     }
 }

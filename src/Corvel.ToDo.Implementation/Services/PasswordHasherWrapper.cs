@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Corvel.ToDo.Implementation.Services;
 
-public class PasswordHasherWrapper() : IPasswordHasher
+public class PasswordHasherWrapper : IPasswordHasher
 {
     private static readonly User SentinelUser = new();
     private readonly PasswordHasher<User> innerHasher = new();

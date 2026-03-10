@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Corvel.ToDo.Abstractions.Exceptions;
 using Corvel.ToDo.Abstractions.Interfaces;
 using Microsoft.AspNetCore.Http;
 
@@ -15,7 +16,7 @@ public class HttpContextCurrentUserAccessor(
 
             if (claim is null || !int.TryParse(claim.Value, out var userId))
             {
-                throw new InvalidOperationException("User is not authenticated.");
+                throw new AuthenticationFailedException("User is not authenticated.");
             }
 
             return userId;

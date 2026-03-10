@@ -13,6 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="SharpGrip.FluentValidation.AutoValidation.Mvc" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Corvel.ToDo.Abstractions\Corvel.ToDo.Abstractions.csproj" />
     <ProjectReference Include="..\Corvel.ToDo.Implementation\Corvel.ToDo.Implementation.csproj" />
     <ProjectReference Include="..\Corvel.ToDo.Common\Corvel.ToDo.Common.csproj" />

@@ -1,14 +1,14 @@
 using Corvel.ToDo.Abstractions.Interfaces;
-using Corvel.ToDo.Web.Core.Middleware;
 using Corvel.ToDo.Web.Core.Services;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class WebCoreServiceCollectionExtensions
 {
-    public static IServiceCollection AddWebCoreServices(this IServiceCollection services)
+    public static IServiceCollection AddWebCore(this IServiceCollection services)
     {
-        services.AddScoped<GlobalExceptionHandlerMiddleware>();
+        services.AddFluentValidationAutoValidation();
         services.AddControllers();
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();

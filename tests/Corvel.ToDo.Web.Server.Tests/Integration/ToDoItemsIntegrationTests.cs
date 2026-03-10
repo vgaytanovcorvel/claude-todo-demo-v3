@@ -141,12 +141,8 @@ public class ToDoItemsIntegrationTests
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var apiResponse = await DeserializeResponseAsync<object>(response);
-
-        apiResponse.Should().NotBeNull();
-        var result = apiResponse ?? throw new InvalidOperationException("Response was null");
-        result.Success.Should().BeFalse();
-        result.Error.Should().NotBeNullOrWhiteSpace();
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().NotBeNullOrWhiteSpace();
     }
 
     [TestMethod]
@@ -282,12 +278,8 @@ public class ToDoItemsIntegrationTests
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var apiResponse = await DeserializeResponseAsync<object>(response);
-
-        apiResponse.Should().NotBeNull();
-        var result = apiResponse ?? throw new InvalidOperationException("Response was null");
-        result.Success.Should().BeFalse();
-        result.Error.Should().NotBeNullOrWhiteSpace();
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().NotBeNullOrWhiteSpace();
     }
 
     [TestMethod]

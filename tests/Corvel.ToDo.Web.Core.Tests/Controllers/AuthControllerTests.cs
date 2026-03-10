@@ -4,6 +4,7 @@ using Corvel.ToDo.Abstractions.Models;
 using Corvel.ToDo.Abstractions.Requests;
 using Corvel.ToDo.Common.Dtos;
 using Corvel.ToDo.Web.Core.Controllers;
+using Corvel.ToDo.Web.Core.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -54,7 +55,7 @@ public class AuthControllerTests
         objectResult.Should().NotBeNull();
         objectResult!.StatusCode.Should().Be(201);
 
-        var apiResponse = objectResult.Value as ApiResponse<AuthToken>;
+        var apiResponse = objectResult.Value as ApiResponse<AuthTokenResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data.Should().NotBeNull();
@@ -94,7 +95,7 @@ public class AuthControllerTests
         okResult.Should().NotBeNull();
         okResult!.StatusCode.Should().Be(200);
 
-        var apiResponse = okResult.Value as ApiResponse<AuthToken>;
+        var apiResponse = okResult.Value as ApiResponse<AuthTokenResponse>;
         apiResponse.Should().NotBeNull();
         apiResponse!.Success.Should().BeTrue();
         apiResponse.Data.Should().NotBeNull();

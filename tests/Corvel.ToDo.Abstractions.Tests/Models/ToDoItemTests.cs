@@ -68,22 +68,33 @@ public class ToDoItemTests
     }
 
     [TestMethod]
-    public void Properties_ShouldAllowReassignment_WhenSettersAreCalled()
+    public void WithExpression_ShouldCreateNewInstance_WhenPropertiesAreChanged()
     {
         // Arrange
-        toDoItem.Id = 1;
-        toDoItem.Title = "Original Title";
-        toDoItem.Priority = Priority.Low;
+        var original = new ToDoItem
+        {
+            Id = 1,
+            Title = "Original Title",
+            Priority = Priority.Low
+        };
 
         // Act
-        toDoItem.Id = 2;
-        toDoItem.Title = "Updated Title";
-        toDoItem.Priority = Priority.High;
+        var updated = original with
+        {
+            Id = 2,
+            Title = "Updated Title",
+            Priority = Priority.High
+        };
 
         // Assert
-        toDoItem.Id.Should().Be(2);
-        toDoItem.Title.Should().Be("Updated Title");
-        toDoItem.Priority.Should().Be(Priority.High);
+        updated.Id.Should().Be(2);
+        updated.Title.Should().Be("Updated Title");
+        updated.Priority.Should().Be(Priority.High);
+
+        // Original should remain unchanged
+        original.Id.Should().Be(1);
+        original.Title.Should().Be("Original Title");
+        original.Priority.Should().Be(Priority.Low);
     }
 
     [TestMethod]
@@ -97,24 +108,30 @@ public class ToDoItemTests
     }
 
     [TestMethod]
-    public void NullableProperties_ShouldAcceptNullValues_WhenSetToNull()
+    public void NullableProperties_ShouldAcceptNullValues_WhenSetViaWithExpression()
     {
         // Arrange
-        toDoItem.Description = "Some description";
-        toDoItem.UpdatedAtUtc = DateTime.UtcNow;
-        toDoItem.DueDate = DateTime.UtcNow;
-        toDoItem.CompletedAtUtc = DateTime.UtcNow;
+        var item = new ToDoItem
+        {
+            Description = "Some description",
+            UpdatedAtUtc = DateTime.UtcNow,
+            DueDate = DateTime.UtcNow,
+            CompletedAtUtc = DateTime.UtcNow
+        };
 
         // Act
-        toDoItem.Description = null;
-        toDoItem.UpdatedAtUtc = null;
-        toDoItem.DueDate = null;
-        toDoItem.CompletedAtUtc = null;
+        var cleared = item with
+        {
+            Description = null,
+            UpdatedAtUtc = null,
+            DueDate = null,
+            CompletedAtUtc = null
+        };
 
         // Assert
-        toDoItem.Description.Should().BeNull();
-        toDoItem.UpdatedAtUtc.Should().BeNull();
-        toDoItem.DueDate.Should().BeNull();
-        toDoItem.CompletedAtUtc.Should().BeNull();
+        cleared.Description.Should().BeNull();
+        cleared.UpdatedAtUtc.Should().BeNull();
+        cleared.DueDate.Should().BeNull();
+        cleared.CompletedAtUtc.Should().BeNull();
     }
 }

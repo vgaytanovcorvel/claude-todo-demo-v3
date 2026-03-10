@@ -19,13 +19,13 @@ public class TokenService(
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Key));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var claims = new[]
-        {
+        Claim[] claims =
+        [
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
             new Claim(ClaimTypes.GivenName, user.FirstName),
             new Claim(ClaimTypes.Surname, user.LastName)
-        };
+        ];
 
         var now = timeProvider.GetUtcNow().UtcDateTime;
         var expiration = now.AddMinutes(options.ExpirationMinutes);

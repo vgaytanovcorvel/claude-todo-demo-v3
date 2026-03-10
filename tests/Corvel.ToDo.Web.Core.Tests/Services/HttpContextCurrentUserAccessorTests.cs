@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Corvel.ToDo.Abstractions.Exceptions;
 using Corvel.ToDo.Web.Core.Services;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -53,7 +54,7 @@ public class HttpContextCurrentUserAccessorTests
     }
 
     [TestMethod]
-    public void UserId_ShouldThrowInvalidOperationException_WhenNoClaimExists()
+    public void UserId_ShouldThrowAuthenticationFailedException_WhenNoClaimExists()
     {
         // Arrange
         var identity = new ClaimsIdentity();
@@ -74,7 +75,7 @@ public class HttpContextCurrentUserAccessorTests
         var action = () => accessorMock.Object.UserId;
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        action.Should().Throw<AuthenticationFailedException>()
             .WithMessage("User is not authenticated.");
 
         accessorMock.VerifyAll();
@@ -82,7 +83,7 @@ public class HttpContextCurrentUserAccessorTests
     }
 
     [TestMethod]
-    public void UserId_ShouldThrowInvalidOperationException_WhenClaimIsNotInteger()
+    public void UserId_ShouldThrowAuthenticationFailedException_WhenClaimIsNotInteger()
     {
         // Arrange
         var claims = new List<Claim>
@@ -107,7 +108,7 @@ public class HttpContextCurrentUserAccessorTests
         var action = () => accessorMock.Object.UserId;
 
         // Assert
-        action.Should().Throw<InvalidOperationException>()
+        action.Should().Throw<AuthenticationFailedException>()
             .WithMessage("User is not authenticated.");
 
         accessorMock.VerifyAll();
